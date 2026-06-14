@@ -105,9 +105,9 @@
         
         body.theater-active .top-nav-actions { background: transparent !important; border-bottom: none !important; position: fixed; top: 15px; left: 15px; z-index: 1000000; padding: 0 !important; gap: 10px !important; display: flex !important; }
         
-        /* إظهار أيقونات المشغل فقط كـ رموز في وضع السينما */
-        body.theater-active .top-nav-actions > *:not(.player-control-btn) { display: none !important; }
-        body.theater-active .player-control-btn { background: rgba(0,0,0,0.5) !important; color: white !important; border-color: #fff !important; font-size: 20px; padding: 8px 15px; border-radius: 50%; }
+        /* إظهار زرار إلغاء السينما فقط في وضع السينما */
+        body.theater-active .top-nav-actions > *:not(#theaterModeBtn) { display: none !important; }
+        body.theater-active #theaterModeBtn { background: rgba(0,0,0,0.5) !important; color: white !important; border-color: #fff !important; font-size: 20px; padding: 8px 15px; border-radius: 50%; display: flex !important; }
         
         body.theater-active #video-wrapper { width: 100vw; height: 100vh; max-width: none; margin: 0; border: none; border-radius: 0; position: fixed; top: 0; left: 0; z-index: 99999; box-shadow: none; }
 
@@ -150,13 +150,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="manifest" href="./manifest.json?v=v1781414154787">
-    <meta name="theme-color" content="#6f156c">
-    <link rel="apple-touch-icon" href="./icon-192.png?v=v1781414154787">
+    <link rel="manifest" href="./manifest.json?v=v1781414933339">
+    <meta name="theme-color" content="#9b77bb">
+    <link rel="apple-touch-icon" href="./icon-192.png?v=v1781414933339">
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=v1781414154787')
+          navigator.serviceWorker.register('./sw.js?v=v1781414933339')
             .then(reg => console.log('SW Registered'))
             .catch(err => console.log('SW Failed', err));
         });
