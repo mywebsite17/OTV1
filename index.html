@@ -1,13 +1,45 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <title> OMAR TV 2 Edition - Pro Max</title>
+    <title>Pro Max</title>
     <meta property="og:site_name" content="OMAR TV">
     <meta property="og:title" content=" TV">
     <meta property="og:description" content="© 2027 OMAR TV. All Rights Reserved.">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.3">
     <meta name="theme-color" content="#000200">
+    
+    <!-- رادار سحب الروابط يعمل فوراً عند فتح الصفحة -->
+    <script>
+        window.sniffedUrls = [];
+        (function() {
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if(url && typeof url === 'string') {
+                    if(url.includes('.m3u8') || url.includes('.ts') || url.includes('.mp4') || url.includes('.flv')) {
+                        if(!window.sniffedUrls.includes(url)) window.sniffedUrls.push(url);
+                    }
+                }
+                this.addEventListener('load', function() {
+                    if(this.responseURL && (this.responseURL.includes('.m3u8') || this.responseURL.includes('.ts') || this.responseURL.includes('.mp4') || this.responseURL.includes('.flv'))) {
+                        if(!window.sniffedUrls.includes(this.responseURL)) window.sniffedUrls.push(this.responseURL);
+                    }
+                });
+                origOpen.apply(this, arguments);
+            };
+            const origFetch = window.fetch;
+            window.fetch = async function() {
+                let url = arguments[0];
+                if(url && typeof url === 'string') {
+                    if(url.includes('.m3u8') || url.includes('.ts') || url.includes('.mp4') || url.includes('.flv')) {
+                        if(!window.sniffedUrls.includes(url)) window.sniffedUrls.push(url);
+                    }
+                }
+                return origFetch.apply(this, arguments);
+            };
+        })();
+    </script>
+
     <style type="text/css">
         body { margin: 0; background-color: #000200; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; transition: background-color 0.5s ease; direction: rtl; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
         body.theme-blue { background-color: #0a192f; }
@@ -178,13 +210,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="manifest" href="./manifest.json?v=v17815684927056">
-    <meta name="theme-color" content="#a666cc">
-    <link rel="apple-touch-icon" href="./icon-192.png?v=v17815684927056">
+    <link rel="manifest" href="./manifest.json?v=v1781595379197">
+    <meta name="theme-color" content="#b715a9">
+    <link rel="apple-touch-icon" href="./icon-192.png?v=v1781595379197">
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=v17815684927056')
+          navigator.serviceWorker.register('./sw.js?v=v1781595379197')
             .then(reg => console.log('SW Registered'))
             .catch(err => console.log('SW Failed', err));
         });
@@ -198,8 +230,13 @@
     <div class="top-nav-actions" id="mainTopNav">
         <button class="outline-btn danger-btn player-control-btn" id="navClosePlayerBtn" onclick="closePlayer()" style="display: none;" title="إغلاق المشغل">✖ إغلاق المشغل</button>
         <button class="outline-btn action-btn player-control-btn" id="theaterModeBtn" onclick="toggleTheaterMode()" style="display: none;" title="وضع السينما">🎬 وضع السينما</button>
+        
+        <!-- زرار ملء الشاشة الجديد -->
+        <button class="outline-btn action-btn player-control-btn" id="fullScreenBtn" onclick="toggleFullScreen()" style="display: none;" title="ملء الشاشة">🔲 ملء الشاشة</button>
+        
         <button class="outline-btn action-btn player-control-btn" id="miniClickBlockerBtn" onclick="toggleClickBlocker()" style="display: none; padding: 5px 15px; font-size: 16px;" title="تفعيل/تعطيل الطبقة الشفافة">👻</button>
         
+        <!-- زرار الجودة -->
         <select id="qualitySelector" class="outline-btn action-btn player-control-btn" style="display: none; padding: 5px 10px; cursor: pointer; max-width: 120px;" onchange="changeQuality(this.value)">
             <option value="-1">الجودة: تلقائي</option>
         </select>
@@ -210,6 +247,10 @@
         
         <button class="outline-btn success-btn" onclick="downloadAsHTML()">💾 تحميل ملف HTML</button>
         
+        <!-- زرار رادار الروابط -->
+        <button class="outline-btn action-btn" onclick="openSnifferModal()" title="سحب وعرض الروابط المخفية">🛠️ صائد الروابط</button>
+        
+        <!-- زرار الـ VLC الثابت دايماً في الشريط العلوي -->
         <button class="outline-btn" style="border-color: #ff9800; color: #ff9800;" onclick="openInVLC()" title="فتح في مشغل VLC الخارجي">🎬 فتح في VLC</button>
         
         <button class="outline-btn action-btn" onclick="openDirectPlayModal()">▶️ تشغيل سريع</button>
@@ -229,6 +270,7 @@
         <button class="outline-btn action-btn" onclick="originalWindowOpen('https://mywebsite17.github.io/0/', '_blank')">🔗 رابط الموقع</button>
         
         <input type="file" id="m3uInput" accept=".m3u,.m3u8" style="display: none;" onchange="handleM3UImport(event)">
+        <!-- ملف رفع صورة الفولدر المخفي -->
         <input type="file" id="folderImageInput" accept="image/*" style="display: none;" onchange="handleFolderImageUpload(event)">
     </div>
 
@@ -298,6 +340,21 @@
         <div class="channels-grid" id="channelsGridContainer"></div>
     </div>
 
+    <!-- نافذة صائد الروابط بداخلها زر فحص العنصر Inspect -->
+    <div class="modal-overlay" id="snifferModal">
+        <div class="modal-box" style="max-width: 700px;">
+            <h3 style="color: #00c3ff;">🛠️ صائد الروابط (Network Sniffer)</h3>
+            <p style="font-size: 13px; color: #ccc; margin-bottom: 15px;">الروابط اللي المتصفح سحبها لتشغيل الفيديو (m3u8, ts, mp4).<br><span style="color:#f87171;">⚠️ لو القناة شغالة جوه (Iframe)، الروابط مش هتظهر هنا بسبب حماية المتصفح.</span></p>
+            <div id="sniffedUrlsContainer" style="max-height: 250px; overflow-y: auto; background: #222; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
+            </div>
+            <button class="modal-btn" onclick="refreshSnifferUI()">🔄 تحديث القائمة</button>
+            <button class="modal-btn" style="background: #9c27b0; color: white;" onclick="triggerInspect()">🔍 فحص (Inspect Q)</button>
+            <button class="modal-btn" style="background: #eab308; color: #000;" onclick="clearSniffer()">🗑️ مسح الروابط</button>
+            <button class="modal-btn" style="background: #f87171; color: white;" onclick="closeModal('snifferModal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- نافذة التشغيل المباشر -->
     <div class="modal-overlay" id="directPlayModal">
         <div class="modal-box">
             <h3 style="color: #00c3ff;">▶️ تشغيل سريع للمشغل</h3>
@@ -467,6 +524,57 @@
         }
 
         // ==========================================
+        // 🛠️ CUSTOM NETWORK SNIFFER LOGIC
+        // ==========================================
+        function openSnifferModal() {
+            checkAuth(() => {
+                document.getElementById('snifferModal').style.display = 'flex';
+                refreshSnifferUI();
+            });
+        }
+
+        function refreshSnifferUI() {
+            const container = document.getElementById('sniffedUrlsContainer');
+            container.innerHTML = '';
+            if(!window.sniffedUrls || window.sniffedUrls.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888; font-size: 13px;">لم يتم التقاط أي روابط حتى الآن، شغل قناة وانتظر قليلاً...</p>';
+                return;
+            }
+            // عكس المصفوفة لعرض الأحدث فوق
+            let reversedUrls = [...window.sniffedUrls].reverse();
+            reversedUrls.forEach(url => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #111; margin-bottom: 5px; padding: 10px; border-bottom: 1px solid #333; gap: 10px;';
+                
+                const text = document.createElement('span');
+                text.style.cssText = 'color: #eab308; font-size: 11px; font-family: monospace; text-align: left; word-break: break-all; direction: ltr;';
+                text.innerText = url;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.innerText = '📋 نسخ';
+                copyBtn.style.cssText = 'background: #00c3ff; color: #000; border: none; flex-shrink: 0; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(url);
+                    copyBtn.innerText = '✅ تم';
+                    setTimeout(() => copyBtn.innerText = '📋 نسخ', 2000);
+                };
+                
+                div.appendChild(text);
+                div.appendChild(copyBtn);
+                container.appendChild(div);
+            });
+        }
+
+        function clearSniffer() {
+            window.sniffedUrls = [];
+            refreshSnifferUI();
+        }
+
+        function triggerInspect() {
+            alert("⚠️ المتصفحات بتمنع فتح قائمة فحص العنصر (Inspect) عن طريق زرار مباشر لأسباب أمنية.\n\nعشان تفتح القائمة فوراً من الكيبورد:\n- في الويندوز: دوس F12 أو Ctrl + Shift + C\n- في الماك: دوس Cmd + Option + C\n\nأو تقدر تدوس كليك يمين على الفيديو وتختار Inspect (Q) بنفسك.");
+        }
+
+        // ==========================================
         // 📺 APP LOGIC & AUTH 📺
         // ==========================================
         let appData = { folders: [] };
@@ -476,7 +584,7 @@
         let isFolderReorderMode = false, isChannelReorderMode = false, dragSrcIndex = null;
         let autoSwitchTimer = null, currentRenderLimit = 150; 
         let currentEditingFolderId = null; 
-        let currentDirectUrl = ""; // لحفظ رابط التشغيل السريع
+        let currentDirectUrl = ""; 
 
         const ADMIN_PASS = "#ZMsd42d*";
         function checkAuth(action) {
@@ -488,7 +596,6 @@
             }
         }
 
-        // إعداد الفايربيز المحمي ضد الحظر
         const firebaseConfig = { apiKey: "AIzaSyBtIkF-UhkeFa-cxutgJAQpR7K_IjKxloc", authDomain: "spygame-337ee.firebaseapp.com", databaseURL: "https://spygame-337ee-default-rtdb.firebaseio.com", projectId: "spygame-337ee" };
         let database = null;
         try { 
@@ -573,7 +680,6 @@
         function saveToFirebase() {
             appData.lastUpdated = Date.now();
             
-            // تنظيف البيانات لضمان عدم رفض الفايربيز (حذف أي قيم undefined)
             let cleanData = null;
             try { cleanData = JSON.parse(JSON.stringify(appData)); } catch(e) { cleanData = appData; }
             
@@ -652,7 +758,6 @@
                 item.style.display = name.includes(query) ? '' : 'none';
             });
             
-            // إخفاء رؤوس المجموعات الفارغة بعد البحث
             document.querySelectorAll('.group-header').forEach(header => {
                 let next = header.nextElementSibling;
                 let visibleCount = 0;
@@ -676,7 +781,7 @@
                 let favFolder = appData.folders.find(f => f.name === 'المفضلة ⭐');
                 if (!favFolder) {
                     favFolder = { id: "folder_fav_" + Date.now(), name: 'المفضلة ⭐', channels: [], image: "" };
-                    appData.folders.unshift(favFolder); // إضافته في أول القائمة
+                    appData.folders.unshift(favFolder); 
                 }
                 
                 const exists = favFolder.channels.find(c => c.url === channel.url);
@@ -753,7 +858,6 @@
             });
         }
 
-        // --- FOLDER IMAGE LOGIC ---
         function changeFolderImage(id) {
             checkAuth(() => {
                 const folder = appData.folders.find(f => f.id === id);
@@ -859,7 +963,6 @@
         function renameFolder(id) { checkAuth(() => { const folder = appData.folders.find(f => f.id === id); const newName = prompt("تعديل اسم المجلد:", folder.name); if (newName) { folder.name = newName; renderFoldersGrid(); saveToFirebase(); } }); }
         function deleteFolder(id) { checkAuth(() => { if (confirm("حذف المجلد؟")) { appData.folders = appData.folders.filter(f => f.id !== id); renderFoldersGrid(); saveToFirebase(); } }); }
 
-        // --- Channels with Groups Visualization ---
         function renderChannelsGrid(resetLimit = false) {
             if (resetLimit) currentRenderLimit = 150;
             const grid = document.getElementById('channelsGridContainer'); grid.innerHTML = '';
@@ -896,7 +999,6 @@
 
                     const badge = document.createElement('div'); badge.className = 'select-badge'; badge.innerText = '✓'; box.appendChild(badge);
                     
-                    // إضافة زر المفضلة إذا لم نكن داخل مجلد المفضلة
                     if (!isChannelReorderMode && (!appData.folders.find(f=>f.name==='المفضلة ⭐') || activeFolderId !== appData.folders.find(f=>f.name==='المفضلة ⭐').id)) {
                         const favBtn = document.createElement('div');
                         favBtn.className = 'fav-btn';
@@ -937,7 +1039,6 @@
                 grid.appendChild(loadMoreBtn);
             }
             
-            // تطبيق فلتر البحث لو كان فيه كلام مكتوب
             filterChannels();
         }
 
@@ -985,7 +1086,6 @@
             });
         }
 
-        // --- IMPORTS (M3U, XTREAM, STALKER) ---
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openBulkModal() { checkAuth(() => { document.getElementById('bulkModal').style.display = 'flex'; }); }
         function applyBulkAdd() { const input = document.getElementById('bulkInput').value.trim(); if(!input) return; const folder = appData.folders.find(f => f.id === activeFolderId); if(!folder.channels) folder.channels = []; input.split('\n').forEach(line => { if(line.trim()) { const parts = line.split('|'); folder.channels.push({ logo: parts[0]?parts[0].trim():"", url: parts[1]?parts[1].trim():line.trim(), name: parts[2]?parts[2].trim():"قناة", group: "مضاف يدوياً" }); } }); closeModal('bulkModal'); renderChannelsGrid(true); saveToFirebase(); }
@@ -1047,13 +1147,11 @@
             else { alert("❌ فشل السحب! البورتال يتطلب توكن حماية (Token)."); }
         }
 
-        // Core Parser (Xtream & Stalker create root folders, while File import inside folder stays inside)
         function parseM3UAndImport(content, fileName, forceRootFolders = false) {
             const lines = content.split('\n');
             let defaultFolderName = fileName ? fileName.replace('.m3u', '').replace('.m3u8', '') : 'مجلد مستورد';
             let currentLogo = "", currentGroup = "", currentName = ""; let addedCount = 0;
             
-            // هنا الذكاء: لو الاستيراد جاى من اكستريم او ستالكر هيعمل فولدرات برة غصب، ولو ملف هيحترم الفولدر اللي إنت جواه
             let isInsideFolder = !forceRootFolders && activeFolderId && document.getElementById('view-channels').classList.contains('view-active');
             let currentOpenFolder = isInsideFolder ? appData.folders.find(f => f.id === activeFolderId) : null;
 
@@ -1092,14 +1190,13 @@
             }, 100); 
         }
 
-        // تم التعديل هنا: تصدير القنوات باسم الفولدر الأساسي كـ group-title
         function exportM3U() {
             let m3uContent = "#EXTM3U\n";
             appData.folders.forEach(folder => {
                 if(folder.channels) {
                     folder.channels.forEach((ch, index) => {
                         let chName = ch.name || `Channel ${index + 1}`; 
-                        let chGroup = folder.name; // يأخذ اسم الفولدر مباشرة بدل المضاف يدوياً
+                        let chGroup = folder.name; 
                         m3uContent += `#EXTINF:-1 tvg-logo="${ch.logo||''}" group-title="${chGroup}",${chName}\n${ch.url}\n`;
                     });
                 }
@@ -1111,7 +1208,7 @@
         }
 
         function downloadAsHTML() {
-            appData.lastUpdated = Date.now() + 5000; // لتأكيد أن الملف ده هو الأحدث دايماً لما يشتغل
+            appData.lastUpdated = Date.now() + 5000; 
             const clone = document.documentElement.cloneNode(true);
             const fGrid = clone.querySelector('#foldersGrid'); if(fGrid) fGrid.innerHTML = '';
             const cGrid = clone.querySelector('#channelsGridContainer'); if(cGrid) cGrid.innerHTML = '';
@@ -1121,7 +1218,7 @@
             scriptTag.textContent = "\nvar INJECTED_DATA = " + safeData + ";\n";
             
             clone.querySelector('body').classList.remove('theater-active');
-            ['#video-wrapper', '#qualitySelector', '#navClosePlayerBtn', '#theaterModeBtn', '#miniClickBlockerBtn', '#navRefreshPlayerBtn', '#castBtn', '#navExternalBtn', '#player-error'].forEach(id => {
+            ['#video-wrapper', '#qualitySelector', '#navClosePlayerBtn', '#theaterModeBtn', '#fullScreenBtn', '#miniClickBlockerBtn', '#navRefreshPlayerBtn', '#castBtn', '#navExternalBtn', '#player-error'].forEach(id => {
                 let el = clone.querySelector(id); if(el) el.style.display = 'none';
             });
             clone.querySelector('#iframe-player').src = '';
@@ -1161,8 +1258,20 @@
                 eBtn.innerText = '🌐 فتح خارجي'; eBtn.title = '';
             }
         }
+        
+        function toggleFullScreen() {
+            let elem = document.getElementById('video-wrapper');
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) { elem.requestFullscreen(); }
+                else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+                else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+            }
+        }
 
-        // كود الفتح الخارجي المتقدم (بيمنع تحميل الملفات)
         function openExternal() {
             let url = "";
             if (playingFolderId === 'direct' && currentDirectUrl) {
@@ -1180,7 +1289,6 @@
                 return;
             }
 
-            // لو رابط البث TS هيتفتح في مشغل خارجي مبني فورا بدل ما يتحمل كملف
             let win = originalWindowOpen('', '_blank');
             if (win) {
                 win.document.write(`
@@ -1224,7 +1332,6 @@
             }
         }
 
-        // فتح القناة في مشغل VLC (معدل ليعمل على الكمبيوتر والموبايل)
         function openInVLC() {
             let url = ""; let title = "Omar_TV_Stream";
             if (playingFolderId === 'direct') { url = currentDirectUrl; }
@@ -1236,7 +1343,6 @@
                 }
             }
             if (url) {
-                // الحل الأكيد للكمبيوتر: تحميل ملف m3u صغير يشغل القناة فوراً
                 let m3uContent = "#EXTM3U\n#EXTINF:-1," + title + "\n" + url;
                 let blob = new Blob([m3uContent], { type: 'audio/x-mpegurl' });
                 let blobUrl = URL.createObjectURL(blob);
@@ -1248,14 +1354,12 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(blobUrl);
                 
-                // أمر إضافي للموبايلات عشان يفتح التطبيق مباشرة لو مدعوم
                 setTimeout(() => { window.open("vlc://" + url, '_self'); }, 500);
             } else {
                 alert("شغل قناة الأول عشان تفتحها في برنامج VLC!");
             }
         }
 
-        // تحويل روابط TS المباشرة إلى m3u8 للمتصفح لحل مشكلة الحظر
         function fallbackToM3u8() {
             let url = "";
             if (playingFolderId === 'direct') { url = currentDirectUrl; }
@@ -1270,7 +1374,6 @@
                     newUrl = url + (url.includes('?') ? '&' : '?') + 'output=m3u8';
                 }
                 
-                // تحديث الرابط الحالي عشان يشتغل صح بعد كده
                 if (playingFolderId === 'direct') {
                     currentDirectUrl = newUrl;
                 } else {
@@ -1295,19 +1398,17 @@
                 } else { alert("المتصفح بتاعك مش بيدعم البث."); }
             } else if (!iframeVid.parentElement.classList.contains('hidden')) {
                 if(iframeVid.src) {
-                    openExternal(); // تم تعديلها لتستخدم الدالة المحمية الجديدة
+                    openExternal(); 
                 }
             } else { alert("شغل قناة الأول!"); }
         }
 
-        // دالة تغيير الجودة الخاصة بـ HLS
         function changeQuality(levelIndex) {
             if (hlsInstance) {
                 hlsInstance.currentLevel = parseInt(levelIndex);
             }
         }
 
-        // كود تشغيل الفيديو الأساسي بصوت تلقائي إجباري
         const safePlayVideo = () => {
             hlsVideo.muted = false;
             hlsVideo.volume = 1.0;
@@ -1328,9 +1429,9 @@
             playingFolderId = folderId; playingChannelIndex = index;
             document.getElementById('video-wrapper').style.display = 'block';
             
-            ['navClosePlayerBtn', 'theaterModeBtn', 'miniClickBlockerBtn', 'navRefreshPlayerBtn', 'castBtn', 'navExternalBtn'].forEach(id => document.getElementById(id).style.display = 'flex');
+            ['navClosePlayerBtn', 'theaterModeBtn', 'fullScreenBtn', 'miniClickBlockerBtn', 'navRefreshPlayerBtn', 'castBtn', 'navExternalBtn'].forEach(id => document.getElementById(id).style.display = 'flex');
             playerError.style.display = 'none';
-            document.getElementById('qualitySelector').style.display = 'none'; // إخفاء الجودة مؤقتاً لحد ما المشغل يحمل
+            document.getElementById('qualitySelector').style.display = 'none'; 
             
             if (!document.body.classList.contains('theater-active')) window.scrollTo({ top: 0, behavior: 'smooth' });
             if (activeFolderId === playingFolderId && playingFolderId !== 'direct') renderChannelsGrid(false);
@@ -1343,13 +1444,11 @@
 
             let lowerUrl = url.toLowerCase();
 
-            // إلغاء التحويل الإجباري للـ TS لعدم ضرب السيرفرات الحساسة
             if (lowerUrl.includes('.m3u8') || lowerUrl.includes('.m3u')) {
                 hlsVideo.classList.remove('hidden');
                 if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                     hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(hlsVideo);
                     
-                    // استخراج وعرض الجودات لو متوفرة
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                         safePlayVideo();
                         const qSel = document.getElementById('qualitySelector');
@@ -1393,9 +1492,9 @@
 
         function closePlayer() {
             if(document.body.classList.contains('theater-active')) toggleTheaterMode();
+            if (document.fullscreenElement) { document.exitFullscreen().catch(e=>{}); }
             document.getElementById('video-wrapper').style.display = 'none';
-            // تم تصحيح الكود هنا لإخفاء الزراير بشكل صحيح
-            ['navClosePlayerBtn', 'qualitySelector', 'theaterModeBtn', 'miniClickBlockerBtn', 'navRefreshPlayerBtn', 'castBtn', 'navExternalBtn'].forEach(id => document.getElementById(id).style.display = 'none');
+            ['navClosePlayerBtn', 'qualitySelector', 'theaterModeBtn', 'fullScreenBtn', 'miniClickBlockerBtn', 'navRefreshPlayerBtn', 'castBtn', 'navExternalBtn'].forEach(id => document.getElementById(id).style.display = 'none');
             playerError.style.display = 'none';
             
             hlsVideo.pause(); hlsVideo.removeAttribute('src'); hlsVideo.load(); iframeVideo.src = "";
@@ -1409,14 +1508,14 @@
         }
 
         function playNext() {
-            if (playingFolderId === 'direct') return; // لا يوجد التالي في التشغيل المباشر
+            if (playingFolderId === 'direct') return; 
             if (playingFolderId === null || playingChannelIndex === -1) return;
             const folder = appData.folders.find(f => f.id === playingFolderId);
             if (folder && folder.channels.length > 0) playVideo(folder.channels[(playingChannelIndex + 1) % folder.channels.length].url, playingFolderId, (playingChannelIndex + 1) % folder.channels.length);
         }
 
         function playPrev() {
-            if (playingFolderId === 'direct') return; // لا يوجد السابق في التشغيل المباشر
+            if (playingFolderId === 'direct') return; 
             if (playingFolderId === null || playingChannelIndex === -1) return;
             const folder = appData.folders.find(f => f.id === playingFolderId);
             if (folder && folder.channels.length > 0) playVideo(folder.channels[(playingChannelIndex - 1 + folder.channels.length) % folder.channels.length].url, playingFolderId, (playingChannelIndex - 1 + folder.channels.length) % folder.channels.length);
